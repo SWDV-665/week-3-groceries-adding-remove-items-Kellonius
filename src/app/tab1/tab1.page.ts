@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { AlertController, ToastController } from '@ionic/angular';
+import { GroceriesServiceService } from '../providers/groceries-service.service';
 
 @Component({
   selector: 'app-tab1',
@@ -8,16 +9,14 @@ import { AlertController, ToastController } from '@ionic/angular';
 })
 export class Tab1Page {
 
-  items = [{ Name: "Apples", Type: "Granny Smith", src: "/assets/apples.jpg", purchased: false },
-  { Name: "Bananas", Type: "Yellow", src: "/assets/bananas.jpg", purchased: false },
-  { Name: "Blueberries", Type: "Highbush", src: "/assets/blueberry.jpg", purchased: false },
-  { Name: "Strawberries", Type: "June Bearing", src: "/assets/strawberry.jpg", purchased: false }
-  ]
-
-  constructor(public alertController: AlertController, public toastController: ToastController) { }
+  constructor(public alertController: AlertController, public toastController: ToastController, public groceriesService: GroceriesServiceService) { }
 
   toggle(item: any) {
     item.purchased = !item.purchased
+  }
+
+  loadItems() {
+    return this.groceriesService.items;
   }
 
   async delete(item: any) {
@@ -27,11 +26,7 @@ export class Tab1Page {
     })
 
     toast.present();
-
-    const index: number = this.items.indexOf(item);
-    if (index !== -1) {
-      this.items.splice(index, 1);
-    }
+    this.groceriesService.removeItem(item);
   }
 
   async addItem() {
@@ -52,14 +47,53 @@ export class Tab1Page {
       buttons: [{
         text: "Add",
         handler: data => {
-          this.items.push({ Name: data.itemName, Type: data.itemType, src: "/assets/404.jpg", purchased: false })
+          this.groceriesService.addItem(data);
         }
-      }, 
+      },
       {
         text: "Cancel"
       }]
     });
 
     alert.present();
+  }
+
+  async editItem(item, index) {
+    const toast = await this.toastController.create({
+      message: 'Editing item - ' + index + "...",
+      duration: 3000
+    })
+    toast.present();
+    this.showEditItemPrompt(item, index);
+  }
+
+  async showEditItemPrompt(item, index) {
+    const editAlert = await this.alertController.create({
+      subHeader: 'Edit Item',
+      message: 'Please edit item...',
+      inputs: [
+        {
+          name: 'name',
+          placeholder: 'name',
+          value: item.Name
+        },
+        {
+          name: "type",
+          placeholder: 'type',
+          value: item.Type
+        },
+      ],
+      buttons: [{
+        text: 'Cancel'
+      },
+      {
+        text: 'Save',
+        handler: data => {
+          this.groceriesService.editItem(data, index)
+        }
+      },
+      ]
+    });
+    editAlert.present()
   }
 }
